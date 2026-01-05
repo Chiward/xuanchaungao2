@@ -1,6 +1,7 @@
 from openai import OpenAI
 from typing import Generator
-from .prompts import SYSTEM_PROMPT, PROMPT_TEMPLATES
+from .prompts import SYSTEM_PROMPT, PROMPT_TEMPLATES, EXAMPLE_REFERENCE_PROMPT
+from .example_loader import load_example
 
 class LLMService:
     def __init__(self, api_key: str):
@@ -42,7 +43,14 @@ class LLMService:
 
         # Format system prompt
         system_content = SYSTEM_PROMPT.format(context=context if context else "无参考素材")
-
+        
+        # 加载范文内容
+        example_content = load_example(template_type)
+        
+        # 如果有范文，添加范文参考提示
+        if example_content:
+            system_content += EXAMPLE_REFERENCE_PROMPT.format(example_content=example_content)
+        
         messages = [
             {"role": "system", "content": system_content},
             {"role": "user", "content": user_content}
@@ -60,3 +68,6 @@ class LLMService:
                     yield chunk.choices[0].delta.content
         except Exception as e:
             yield f"[Error: {str(e)}]"
+
+
+
